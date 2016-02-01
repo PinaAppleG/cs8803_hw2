@@ -8,13 +8,13 @@
 REGISTER utils.py USING jython AS utils;
 
 -- load events file 
-events = LOAD '../../data/events.csv' USING PigStorage(',') AS (patientid:chararray, eventid:chararray, eventdesc:chararray, timestamp:chararray, value:float);
+events = LOAD '../../data/events.csv' USING PigStorage(',') AS (patientid:int, eventid:chararray, eventdesc:chararray, timestamp:chararray, value:float);
 
 -- select required columns from events
 events = FOREACH events GENERATE patientid, eventid, ToDate(timestamp, 'yyyy-MM-dd') AS etimestamp, value;
 
 -- load mortality files
-mortality = LOAD '../../data/mortality.csv' USING PigStorage(',') as (patientid:chararray, timestamp:chararray, label:int);
+mortality = LOAD '../../data/mortality.csv' USING PigStorage(',') as (patientid:int, timestamp:chararray, label:int);
 
 mortality = FOREACH mortality GENERATE patientid, ToDate(timestamp, 'yyyy-MM-dd') AS mtimestamp, label;
 
@@ -24,34 +24,35 @@ DUMP mortality;
 -- ***************************************************************************
 -- Compute the index dates for dead and alive patients
 -- ***************************************************************************
-eventswithmort = -- perform join of events and mortality by patientid;
+eventswithmort = -- per115,form join of events and mortality by patientid;
 
-deadevents = -- filter and detect the events of dead patients and create it of the form (patientid, eventid, value, label, time_difference) where time_difference is the days between death date and each event timestamp
+deadevents = -- detect the events of dead patients and create it of the form (patientid, eventid, value, label, time_difference) where time_difference is the days between death date and each event timestamp
 
-aliveevents = -- filter and detect the events of alive patients and create it of the form (patientid, eventid, value, label, time_difference) where time_difference is the days between index date and each event timestamp
+aliveevents = -- detect the events of alive patients and create it of the form (patientid, eventid, value, label, time_difference) where time_difference is the days between index date and each event timestamp
 
 
 -- ***************************************************************************
 -- Filter events within the observation window and remove events with missing values
 -- ***************************************************************************
-filtered = -- contains only events for all patients within an observation window of 1000 days and is of the form (patientid, eventid, value, label, time_difference)
+filtered = -- contains only events for all patients within an observation window of 2000 days and is of the form (patientid, eventid, value, label, time_difference)
 
 
 -- ***************************************************************************
 -- Aggregate events to create features
 -- ***************************************************************************
+featureswithid = -- for group of (patientid, eventid), count the number of  events occurred for the patient and create it (patientid, eventid, featurevalue)
 
-featureswithid = -- for group of (patientid, eventid), count the number of lab, medication and diagnosis events occurred for the patient and create it (patientid, 'eventid_COUNT' AS featureid, featurevalue)
 
 -- ***************************************************************************
 -- Generate feature mapping
 -- ***************************************************************************
-all_features = -- compute the set of distinct featureids obtained from previous step and rank features by featureid to create (idx, featureid)
+all_features = -- compute the set of distinct eventids obtained from previous step and rank features by eventid to create (idx, eventid)
 
 -- store the features as output file. The count obtained in the last row from this file will be used to determine input parameter f in train.py
 STORE all_features INTO 'features' using PigStorage(' ');
 
-features = -- perform join of featureswithid and all_features by featureid and replace featureid with idx. It is of the form (patientid, idx, featurevalue)
+features = -- perform join of featureswithid and all_features by eventid and replace eventid with idx. It is of the form (patientid, idx, featurevalue)
+
 
 -- ***************************************************************************
 -- Normalize the values using min-max normalization
@@ -73,10 +74,11 @@ features = -- compute the final set of normalized features of the form (patienti
 -- ***************************************************************************
 grpd = GROUP features BY patientid;
 
--- aggregate features of same patient together in sparse format
-grpd = GROUP features BY patientid;
-features = FOREACH grpd {
-    sorted = ORDER features BY featureid;
+grpd_order = ORDER grpd BY $0;
+
+features = FOREACH grpd_order 
+{
+    sorted = ORDER features BY idx;
     generate group as patientid, utils.bag_to_svmlight(sorted) as sparsefeature;
 }
 
@@ -90,9 +92,12 @@ features = FOREACH grpd {
 
 labels = -- create it of the form (patientid, label)
 
+samples = JOIN features BY patientid, labels BY patientid;
+
+samples = DISTINCT samples PARALLEL 1;
+
 -- randomly split data for training and testing
-samples = JOIN labels BY patientid, features BY patientid;
-samples = FOREACH samples GENERATE $1 AS label, $3 AS sparsefeature;
+samples = FOREACH samples GENERATE $3 AS label, $1 AS sparsefeature;
 samples = FOREACH samples GENERATE RANDOM() as assignmentkey, *;
 SPLIT samples INTO testing IF assignmentkey <= 0.20, training OTHERWISE;
 training = FOREACH training GENERATE $1..;

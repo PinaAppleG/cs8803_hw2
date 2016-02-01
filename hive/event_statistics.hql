@@ -2,7 +2,7 @@
 -- Loading Data:
 -- create external table mapping for events.csv and mortality_events.csv
 -- Note that events.csv is put under hdfs directory 'input/events/events.csv'
--- similar for mortality_events.csv
+-- similar for mortality.csv
 -- ***************************************************************************
 -- create events table 
 DROP TABLE IF EXISTS events;
