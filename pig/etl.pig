@@ -8,13 +8,13 @@
 REGISTER utils.py USING jython AS utils;
 
 -- load events file 
-events = LOAD '../../data/train/events.csv' USING PigStorage(',') AS (patientid:chararray, eventid:chararray, eventdesc:chararray, timestamp:chararray, value:float);
+events = LOAD '../../data/events.csv' USING PigStorage(',') AS (patientid:chararray, eventid:chararray, eventdesc:chararray, timestamp:chararray, value:float);
 
 -- select required columns from events
 events = FOREACH events GENERATE patientid, eventid, ToDate(timestamp, 'yyyy-MM-dd') AS etimestamp, value;
 
 -- load mortality files
-mortality = LOAD '../../data/train/mortality.csv' USING PigStorage(',') as (patientid:chararray, timestamp:chararray, label:int);
+mortality = LOAD '../../data/mortality.csv' USING PigStorage(',') as (patientid:chararray, timestamp:chararray, label:int);
 
 mortality = FOREACH mortality GENERATE patientid, ToDate(timestamp, 'yyyy-MM-dd') AS mtimestamp, label;
 
