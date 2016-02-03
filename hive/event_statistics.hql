@@ -1,8 +1,19 @@
 -- ***************************************************************************
 -- Loading Data:
 -- create external table mapping for events.csv and mortality_events.csv
--- Note that events.csv is put under hdfs directory 'input/events/events.csv'
--- similar for mortality.csv
+
+-- IMPORTANT NOTES:
+-- You need to put events.csv and mortality.csv under hdfs directory 
+-- '/input/events/events.csv' and '/input/mortality/mortality.csv'
+-- 
+-- To do this, run the following commands for events.csv, 
+-- 1. sudo su - hdfs
+-- 2. hdfs fs -mkdir -p /input/events
+-- 3. hdfs fs -chown -R vagrant /input
+-- 4. exit 
+-- 5. hdfs fs -put /path/to/events.csv /input/events/
+-- Follow the same steps 1 - 5 for mortality.csv, except that the path should be 
+-- '/input/mortality'
 -- ***************************************************************************
 -- create events table 
 DROP TABLE IF EXISTS events;
@@ -14,8 +25,7 @@ CREATE EXTERNAL TABLE events (
   value DOUBLE)
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
 STORED AS TEXTFILE
-LOCATION 'input/events'
-TBLPROPERTIES ("skip.header.line.count"="1");
+LOCATION '/input/events';
 
 -- create mortality events table 
 DROP TABLE IF EXISTS mortality;
@@ -25,9 +35,7 @@ CREATE EXTERNAL TABLE mortality (
   label INT)
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
 STORED AS TEXTFILE
-LOCATION 'input/mortality'
-TBLPROPERTIES ("skip.header.line.count"="1");
-
+LOCATION '/input/mortality';
 
 -- ******************************************************
 -- Task 1:
