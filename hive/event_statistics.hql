@@ -8,10 +8,10 @@
 -- 
 -- To do this, run the following commands for events.csv, 
 -- 1. sudo su - hdfs
--- 2. hdfs fs -mkdir -p /input/events
--- 3. hdfs fs -chown -R vagrant /input
+-- 2. hdfs dfs -mkdir -p /input/events
+-- 3. hdfs dfs -chown -R vagrant /input
 -- 4. exit 
--- 5. hdfs fs -put /path/to/events.csv /input/events/
+-- 5. hdfs dfs -put /path/to/events.csv /input/events/
 -- Follow the same steps 1 - 5 for mortality.csv, except that the path should be 
 -- '/input/mortality'
 -- ***************************************************************************
