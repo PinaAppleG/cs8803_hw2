@@ -46,25 +46,21 @@ LOCATION '/input/mortality';
 DROP VIEW IF EXISTS alive_events;
 CREATE VIEW alive_events 
 AS
-SELECT events.patient_id, events.event_id, events.time 
+SELECT e.patient_id, e.event_id, e.time
+FROM events e LEFT OUTER JOIN mortality m
+ON (e.patient_id = m.patient_id)
+WHERE m.patient_id IS NULL;
 -- ***** your code below *****
-
-
-
-
-
 
 
 -- find events for dead patients
 DROP VIEW IF EXISTS dead_events;
 CREATE VIEW dead_events 
 AS
-SELECT events.patient_id, events.event_id, events.time
+SELECT e.patient_id, e.event_id, e.time
+FROM events e LEFT OUTER JOIN mortality m
+ON (e.patient_id = m.patient_id);
 -- ***** your code below *****
-
-
-
-
 
 
 
@@ -75,18 +71,22 @@ SELECT events.patient_id, events.event_id, events.time
 -- ************************************************
 -- alive patients
 SELECT avg(event_count), min(event_count), max(event_count)
--- ***** your code below *****
-
-
+FROM (
+    SELECT COUNT(*) AS event_count
+    FROM alive_events
+    GROUP BY alive_events.patient_id
+) test;
 
 
 
 -- dead patients
 SELECT avg(event_count), min(event_count), max(event_count)
 -- ***** your code below *****
-
-
-
+FROM (
+    SELECT COUNT(*) AS event_count
+    FROM dead_events
+    GROUP BY dead_events.patient_id
+) test;
 
 
 
@@ -97,18 +97,20 @@ SELECT avg(event_count), min(event_count), max(event_count)
 -- ************************************************
 -- alive
 SELECT avg(encounter_count), min(encounter_count), max(encounter_count)
--- ***** your code below *****
-
-
-
+FROM (
+    SELECT COUNT(DISTINCT alive_events.time) AS encounter_count
+    FROM alive_events
+    GROUP BY alive_events.patient_id
+) test;
 
 
 -- dead
 SELECT avg(encounter_count), min(encounter_count), max(encounter_count)
--- ***** your code below *****
-
-
-
+FROM (
+    SELECT COUNT(DISTINCT dead_events.time) AS encounter_count
+    FROM dead_events
+    GROUP BY dead_events.patient_id
+) test;
 
 
 
@@ -120,19 +122,21 @@ SELECT avg(encounter_count), min(encounter_count), max(encounter_count)
 -- ************************************************
 -- alive 
 SELECT avg(record_length), min(record_length), max(record_length)
--- ***** your code below *****
-
-
+FROM (
+    SELECT DATEDIFF(max(alive_events.time), min(alive_events.time)) AS record_length
+    FROM alive_events
+    GROUP BY alive_events.patient_id
+) test;
 
 
 
 -- dead
 SELECT avg(record_length), min(record_length), max(record_length)
--- ***** your code below *****
-
-
-
-
+FROM (
+    SELECT DATEDIFF(max(dead_events.time), min(dead_events.time)) AS record_length
+    FROM dead_events
+    GROUP BY dead_events.patient_id
+) test;
 
 
 
