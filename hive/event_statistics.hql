@@ -48,7 +48,7 @@ CREATE VIEW alive_events
 AS
 SELECT e.patient_id, e.event_id, e.time
 FROM events e LEFT OUTER JOIN mortality m
-ON (e.patient_id = m.patient_id)
+ON e.patient_id = m.patient_id
 WHERE m.patient_id IS NULL;
 -- ***** your code below *****
 
@@ -59,7 +59,8 @@ CREATE VIEW dead_events
 AS
 SELECT e.patient_id, e.event_id, e.time
 FROM events e LEFT OUTER JOIN mortality m
-ON (e.patient_id = m.patient_id);
+ON e.patient_id = m.patient_id
+WHERE m.patient_id IS NOT NULL;
 -- ***** your code below *****
 
 
@@ -76,7 +77,6 @@ FROM (
     FROM alive_events
     GROUP BY alive_events.patient_id
 ) test;
-
 
 
 -- dead patients
@@ -151,20 +151,28 @@ FROM (
 SELECT event_id, count(*) AS diag_count
 FROM alive_events
 -- ***** your code below *****
-
+WHERE alive_events.event_id LIKE 'DIAG%'
+GROUP BY alive_events.event_id
+ORDER BY diag_count DESC
+LIMIT 5;
 
 ---- lab
 SELECT event_id, count(*) AS lab_count
 FROM alive_events
 -- ***** your code below *****
-
+WHERE alive_events.event_id LIKE 'LAB%'
+GROUP BY alive_events.event_id
+ORDER BY lab_count DESC
+LIMIT 5;
 
 ---- med
 SELECT event_id, count(*) AS med_count
 FROM alive_events
 -- ***** your code below *****
-
-
+WHERE alive_events.event_id LIKE 'DRUG%'
+GROUP BY alive_events.event_id
+ORDER BY med_count DESC
+LIMIT 5;
 
 
 -- dead patients
@@ -172,19 +180,28 @@ FROM alive_events
 SELECT event_id, count(*) AS diag_count
 FROM dead_events
 -- ***** your code below *****
-
+WHERE dead_events.event_id LIKE 'DIAG%'
+GROUP BY dead_events.event_id
+ORDER BY diag_count DESC
+LIMIT 5;
 
 ---- lab
 SELECT event_id, count(*) AS lab_count
 FROM dead_events
 -- ***** your code below *****
-
+WHERE dead_events.event_id LIKE 'LAB%'
+GROUP BY dead_events.event_id
+ORDER BY lab_count DESC
+LIMIT 5;
 
 ---- med
 SELECT event_id, count(*) AS med_count
 FROM dead_events
 -- ***** your code below *****
-
+WHERE dead_events.event_id LIKE 'DRUG%'
+GROUP BY dead_events.event_id
+ORDER BY med_count DESC
+LIMIT 5;
 
 
 
